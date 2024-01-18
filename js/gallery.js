@@ -64,52 +64,63 @@ const images = [
   },
 ];
 
+const galleryContainer = document.querySelector('.gallery');
+const galleryItems = [];
 
-  const galleryContainer = document.querySelector('.gallery');
+const createGalleryItem = ({ preview, original, description }) => {
+  const galleryItem = document.createElement('li');
+  galleryItem.classList.add('gallery-item');
 
-  const createGalleryItem = ({ preview, original, description }) => {
-    const galleryItem = document.createElement('li');
-    galleryItem.classList.add('gallery-item');
-    
-    const galleryLink = document.createElement('a');
-    galleryLink.classList.add('gallery-link');
-    galleryLink.href = original;
-    
-    const galleryImage = document.createElement('img');
-    galleryImage.classList.add('gallery-image');
-    galleryImage.src = preview;
-    galleryImage.alt = description;
-    galleryImage.setAttribute('data-source', original);
-    
-    galleryLink.appendChild(galleryImage);
-    galleryItem.appendChild(galleryLink);
-    
-    return galleryItem;
-  };
+  const galleryLink = document.createElement('a');
+  galleryLink.classList.add('gallery-link');
+  galleryLink.href = original;
 
-  images.forEach(image => {
-    const galleryItem = createGalleryItem(image);
-    galleryContainer.appendChild(galleryItem);
-  });
+  const galleryImage = document.createElement('img');
+  galleryImage.classList.add('gallery-image');
+  galleryImage.src = preview;
+  galleryImage.alt = description;
+  galleryImage.setAttribute('data-source', original);
 
-  galleryContainer.addEventListener('click', (event) => {
-    event.preventDefault();
+  galleryLink.appendChild(galleryImage);
+  galleryItem.appendChild(galleryLink);
+
+  return galleryItem;
+};
+
+images.forEach(image => {
+  const galleryItem = createGalleryItem(image);
+  galleryItems.push(galleryItem);
+});
+
+galleryContainer.append(...galleryItems);
+
+let lightboxInstance = null;
+
+galleryContainer.addEventListener('click', (event) => {
+  event.preventDefault();
+
+  const galleryLink = event.target.closest('.gallery-link');
+
+  if (galleryLink) {
+    const largeImageUrl = galleryLink.querySelector('.gallery-image').dataset.source;
     
-    const galleryLink = event.target.closest('.gallery-link');
-    
-    if (galleryLink) {
-      const largeImageUrl = galleryLink.querySelector('.gallery-image').dataset.source;
-      const instance = basicLightbox.create(`
-        <img src="${largeImageUrl}" alt="Large Image">
-      `);
-      
-      instance.show();
-      
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          instance.close();
-          document.removeEventListener('keydown', e);
-        }
-      });
-    }
-  });
+    lightboxInstance = basicLightbox.create(`
+      <img src="${largeImageUrl}" alt="Large Image">
+    `, {
+      onShow: () => {
+        document.addEventListener('keydown', handleKeyDown);
+      },
+      onClose: () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      },
+    });
+
+    lightboxInstance.show();
+  }
+});
+
+function handleKeyDown(e) {
+  if (e.key === 'Escape') {
+    lightboxInstance.close();
+  }
+}
